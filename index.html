@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Підбір ноутбука під гру</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg-1: #020617;
+      --accent: #38bdf8;
+      --accent-2: #a855f7;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+      --glass: rgba(15,23,42,0.78);
+      --glass-border: rgba(148,163,184,0.35);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --shadow-soft: 0 26px 80px rgba(15,23,42,0.95);
+    }
+
+
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 45%, #000 100%);
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+      overflow-x: hidden;
+      transition: background 0.4s ease, color 0.3s ease;
+    }
+
+
+    /* ==== Анімований фон ==== */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-blob {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 999px;
+      filter: blur(90px);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+      animation: blobFloat 20s ease-in-out infinite alternate;
+    }
+
+    .bg-blob:nth-child(1) {
+      background: radial-gradient(circle, rgba(56,189,248,0.9) 0, transparent 70%);
+      top: -120px;
+      left: -120px;
+    }
+    .bg-blob:nth-child(2) {
+      background: radial-gradient(circle, rgba(168,85,247,0.9) 0, transparent 70%);
+      bottom: -160px;
+      right: -80px;
+      animation-delay: -7s;
+    }
+    .bg-blob:nth-child(3) {
+      background: radial-gradient(circle, rgba(34,197,94,0.9) 0, transparent 70%);
+      top: 40%;
+      right: 10%;
+      animation-delay: -3s;
+    }
+
+
+    @keyframes blobFloat {
+      0% { transform: translate3d(0,0,0) scale(1); }
+      100% { transform: translate3d(40px,-30px,0) scale(1.08); }
+    }
+
+    .noise-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      mix-blend-mode: soft-light;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+      z-index: -2;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 980px;
+      position: relative;
+      z-index: 1;
+      border-radius: 32px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.8), rgba(168,85,247,0.5), rgba(15,23,42,0.4));
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(36px);
+      animation: shellPulse 6s ease-in-out infinite alternate;
+      transition: box-shadow 0.4s ease;
+    }
+
+    @keyframes shellPulse {
+      0% { box-shadow: 0 22px 80px rgba(15,23,42,0.9); }
+      100% { box-shadow: 0 32px 110px rgba(15,23,42,0.95); }
+    }
+
+
+
+    .app-inner {
+      border-radius: 30px;
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+      padding: 22px 18px 24px;
+      transition: background 0.4s ease;
+    }
+
+
+    @media (min-width: 768px) {
+      .app-inner {
+        padding: 26px 26px 26px;
+      }
+    }
+
+    /* ==== Хедер ==== */
+    .header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 3vw + 8px, 32px);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      background: linear-gradient(120deg, #e5e7eb, #f9fafb, #bae6fd);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+
+
+
+
+    /* ==== Лейаут ==== */
+    .layout {
+      display: grid;
+      gap: 18px;
+    }
+
+    @media (min-width: 880px) {
+      .layout {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      }
+    }
+
+    /* ==== Glass-панелі ==== */
+    .glass-panel,
+    .results-panel {
+      background: var(--glass);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 14px 40px rgba(15,23,42,0.95);
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+
+
+    .glass-panel::before,
+    .results-panel::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at top, rgba(148,163,184,0.16), transparent 60%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .glass-panel:hover::before,
+    .results-panel:hover::before {
+      opacity: 1;
+    }
+
+    /* ==== Форма ==== */
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .panel-badge {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: none; /* убрали модель */
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+    }
+
+    .field-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-label span.icon {
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.8));
+      border-radius: 999px;
+      border: 1px solid rgba(51,65,85,0.9);
+      padding: 7px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: border 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease, background 0.2s ease;
+    }
+
+
+
+    .field input::placeholder {
+      color: rgba(148,163,184,0.7);
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.5);
+      transform: translateY(-1px);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    .helper {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ==== Кастом стрелочка селекта (чтобы не было белой) ==== */
+    .field select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      padding-right: 30px;
+      background-image:
+        linear-gradient(45deg, var(--text-muted) 50%, transparent 50%),
+        linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+      background-position:
+        calc(100% - 14px) 50%,
+        calc(100% - 9px) 50%;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    /* убрать белые стрелки у input number */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    /* ==== Кнопка сабміту ==== */
+    button[type="submit"] {
+      position: relative;
+      overflow: hidden;
+      border-radius: 999px;
+      padding: 8px 20px;
+      border: none;
+      background: radial-gradient(circle at top left, var(--accent), var(--accent-2));
+      color: #0b1120;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(56,189,248,0.4);
+      transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+    }
+
+    button[type="submit"]::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 0 0, rgba(255,255,255,0.5), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+    }
+
+    button[type="submit"]:hover::before {
+      opacity: 1;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(56,189,248,0.6);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 6px 20px rgba(15,23,42,0.85);
+    }
+
+    .btn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34,197,94,0.9);
+      animation: dotPulse 1.7s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%,100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    .status-text {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ==== Результати ==== */
+    .results-panel {
+      margin-bottom: 12px;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .results-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .results-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .results-content {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+    }
+
+    .results-placeholder {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .error-text {
+      font-size: 12px;
+      color: var(--danger);
+    }
+
+    /* ==== Вимоги ==== */
+    .req-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .req-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    .req-box {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.96), rgba(15,23,42,0.9));
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(55,65,81,0.9);
+      padding: 9px 10px;
+    }
+
+
+
+    .req-box h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .req-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .req-line span.label {
+      color: var(--text-muted);
+    }
+
+    .req-line span.value {
+      text-align: right;
+      color: var(--text-main);
+    }
+
+    /* ==== Ноутбуки ==== */
+    .laptops-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .laptops-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    .laptop-card {
+      position: relative;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(55,65,81,0.9);
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+      padding: 10px 11px 11px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.95);
+      overflow: hidden;
+      transform-origin: center;
+      transition: transform 0.16s ease-out, box-shadow 0.16s ease-out, border-color 0.16s ease-out;
+    }
+
+
+
+    .laptop-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: conic-gradient(from 140deg, rgba(56,189,248,0.14), transparent 35%, rgba(168,85,247,0.14), transparent 80%);
+      opacity: 0;
+      filter: blur(26px);
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+      mix-blend-mode: screen;
+    }
+
+    .laptop-card:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 18px 42px rgba(15,23,42,0.98);
+      border-color: rgba(56,189,248,0.7);
+    }
+
+
+
+    .laptop-card:hover::before {
+      opacity: 1;
+    }
+
+    .laptop-card strong {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    .laptop-spec {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .laptop-price {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #f97316;
+    }
+
+    .btn-hotline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.8));
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+
+
+
+    .btn-hotline span.icon {
+      font-size: 12px;
+    }
+
+    .btn-hotline:hover {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.8), rgba(15,23,42,0.7));
+      border-color: rgba(56,189,248,0.8);
+      transform: translateY(-1px);
+    }
+
+    }
+
+    /* ==== Статус / лоадер ==== */
+    .loader {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .loader-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      border: 2px solid rgba(56,189,248,0.25);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .footer-note {
+      margin-top: 6px;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    @media (max-width: 480px) {
+      .app-inner {
+        padding: 18px 14px 18px;
+      }
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer">
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+  </div>
+  <div class="noise-overlay"></div>
+
+  <div class="app-shell">
+    <div class="app-inner">
+      <header class="header">
+        <h1>Підбір ноутбука під гру</h1>
+      </header>
+
+      <main class="layout">
+        <!-- Форма -->
+        <section class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">Параметри гри</div>
+            <div class="panel-badge"></div>
+          </div>
+
+          <form id="game-form" method="post" action="javascript:void(0);">
+            <div class="field">
+              <label class="field-label">
+                <span class="icon">🎮</span>
+                Назва гри:
+              </label>
+              <input type="text" name="game_name" required placeholder="Наприклад, Cyberpunk 2077">
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label">
+                  <span class="icon">🎚️</span>
+                  Налаштування графіки:
+                </label>
+                <select name="settings">
+                  <option>Low</option>
+                  <option selected>Medium</option>
+                  <option>High</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="field-label">
+                  <span class="icon">🖥️</span>
+                  Роздільна здатність:
+                </label>
+                <select name="resolution">
+                  <option>1280x720</option>
+                  <option selected>1920x1080</option>
+                  <option>2560x1440</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">
+                <span class="icon">💰</span>
+                Бюджет (грн, необов'язково):
+              </label>
+              <input type="number" name="budget" min="0" placeholder="Наприклад, 45000">
+              <div class="helper">
+                Якщо залишити порожнім — ШІ підбере моделі без жорсткого обмеження по ціні.
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit">
+                <span class="btn-dot"></span>
+                <span>Підібрати ноутбук</span>
+              </button>
+              <div class="status-text" id="status-text">
+                Готово до підбору 👾
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <!-- Результати -->
+        <section>
+          <div class="results-panel">
+            <div class="results-header">
+              <div class="results-title">Системні вимоги</div>
+              <div class="results-badge">AUTO</div>
+            </div>
+            <div class="results-content" id="requirements-block">
+              <div class="results-placeholder">
+                Тут з’являться мінімальні та рекомендовані вимоги до обраної гри.
+              </div>
+            </div>
+          </div>
+
+          <div class="results-panel">
+            <div class="results-header">
+              <div class="results-title">Підібрані ноутбуки</div>
+              <div class="results-badge">MATCH</div>
+            </div>
+            <div class="results-content">
+              <div id="results">
+                <div class="results-placeholder">
+                  Після запиту тут будуть картки ноутбуків із характеристиками та кнопкою «Знайти в Google».
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-note">
+            Дані є орієнтовними рекомендаціями ШІ й можуть відрізнятися від реальних пропозицій магазинів.
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("game-form");
+    const resultsDiv = document.getElementById("results");
+    const reqBlockContainer = document.getElementById("requirements-block");
+    const statusText = document.getElementById("status-text");
+
+
+
+
+    function setLoading(isLoading) {
+      if (isLoading) {
+        statusText.innerHTML = `
+          <span class="loader">
+            <span class="loader-dot"></span>
+            <span>ШІ підбирає ноутбуки...</span>
+          </span>
+        `;
+      } else {
+        statusText.textContent = "Готово до підбору 👾";
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      setLoading(true);
+      resultsDiv.textContent = "Зачекайте, ШІ підбирає ноутбуки...";
+      reqBlockContainer.innerHTML = `
+        <div class="results-placeholder">
+          Оновлюємо мінімальні та рекомендовані вимоги до гри...
+        </div>
+      `;
+
+      const formData = new FormData(form);
+      const body = {
+        game_name: formData.get("game_name"),
+        settings: formData.get("settings"),
+        resolution: formData.get("resolution"),
+        budget: formData.get("budget") ? Number(formData.get("budget")) : null
+      };
+
+      try {
+        const resp = await fetch("/api/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const data = await resp.json();
+        setLoading(false);
+        resultsDiv.innerHTML = "";
+        reqBlockContainer.innerHTML = "";
+
+        if (data.error) {
+          reqBlockContainer.innerHTML = `<div class="error-text">Помилка: ${data.error}</div>`;
+          resultsDiv.textContent = "Помилка: " + data.error;
+          return;
+        }
+
+        if (!data.requirements) {
+          reqBlockContainer.innerHTML = `<div class="error-text">Не вдалося отримати вимоги до гри.</div>`;
+        } else {
+          const req = data.requirements;
+          const gameTitle = data.game || body.game_name;
+
+          const reqHTML = `
+            <div style="font-size:12px; margin-bottom:6px; color: var(--text-muted);">
+              Гра: <span style="color: var(--text-main); font-weight:500;">${gameTitle}</span>
+            </div>
+            <div class="req-grid">
+              <div class="req-box">
+                <h3>Мінімальні</h3>
+                <div class="req-line">
+                  <span class="label">CPU</span>
+                  <span class="value">${req.min.cpu}</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">GPU</span>
+                  <span class="value">${req.min.gpu}</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">RAM</span>
+                  <span class="value">${req.min.ram_gb} ГБ</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">Диск</span>
+                  <span class="value">${req.min.storage_gb} ГБ</span>
+                </div>
+              </div>
+
+              <div class="req-box">
+                <h3>Рекомендовані</h3>
+                <div class="req-line">
+                  <span class="label">CPU</span>
+                  <span class="value">${req.recommended.cpu}</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">GPU</span>
+                  <span class="value">${req.recommended.gpu}</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">RAM</span>
+                  <span class="value">${req.recommended.ram_gb} ГБ</span>
+                </div>
+                <div class="req-line">
+                  <span class="label">Диск</span>
+                  <span class="value">${req.recommended.storage_gb} ГБ</span>
+                </div>
+              </div>
+            </div>
+          `;
+          reqBlockContainer.innerHTML = reqHTML;
+        }
+
+        const laptopsBlock = document.createElement("div");
+        laptopsBlock.innerHTML = "<h2 style='font-size:14px; margin-bottom:8px;'>Підібрані ноутбуки</h2>";
+
+        if (!data.laptops || data.laptops.length === 0) {
+          laptopsBlock.innerHTML += "<p class='results-placeholder'>ШІ не запропонувала жодного ноутбука.</p>";
+        } else {
+          const grid = document.createElement("div");
+          grid.className = "laptops-grid";
+
+          data.laptops.forEach(lap => {
+            const card = document.createElement("div");
+            card.className = "laptop-card";
+
+            card.innerHTML = `
+              <strong>${lap.name}</strong>
+              <div class="laptop-spec">CPU: ${lap.cpu}</div>
+              <div class="laptop-spec">GPU: ${lap.gpu}</div>
+              <div class="laptop-spec">RAM: ${lap.ram_gb} ГБ</div>
+              <div class="laptop-spec">Диск: ${lap.storage_gb} ГБ</div>
+              <div class="laptop-price">≈ ${lap.approx_price_uah} грн</div>
+              ${
+                lap.google_url
+                  ? `<a class="btn-hotline" href="${lap.google_url}" target="_blank" rel="noopener noreferrer">
+                       <span class="icon">🔍</span>
+                       <span>Знайти в Google</span>
+                     </a>`
+                  : ""
+              }
+            `;
+
+            grid.appendChild(card);
+          });
+
+          laptopsBlock.appendChild(grid);
+        }
+
+        resultsDiv.appendChild(laptopsBlock);
+
+        // плавний скрол до результатів
+        const rect = resultsDiv.getBoundingClientRect();
+        const offset = rect.top + window.scrollY - 80;
+        window.scrollTo({ top: offset, behavior: "smooth" });
+
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+        reqBlockContainer.innerHTML = `<div class="error-text">Сталася помилка при зверненні до сервера.</div>`;
+        resultsDiv.textContent = "Сталася помилка при зверненні до сервера.";
+      }
+    });
+  </script>
+</body>
+</html>
